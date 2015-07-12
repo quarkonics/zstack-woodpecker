@@ -103,15 +103,9 @@ build_and_prepare_zstack(){
         commit_report 'Fail' 'Build zstack or deploy zstack.war meet failure. Please check.'
         Exit 1
     fi
-    #$current_folder/$BUILD_ZSTACK_SCRIPT
-    #tempfolder=`mktemp -d`
-    #/bin/cp -f $ZSTACK_ARCHIVE/latest $tempfolder
-    #cd $tempfolder
-    #tar zxf latest
-    #/bin/cp -f zstack.war $SANITYTEST_CONF_FOLDER
-    #/bin/cp -f woodpecker/zstacktestagent.tar.gz $SANITYTEST_CONF_FOLDER
-    #cd -
-    #rm -rf $tempfolder
+    rm -rf $SANITYTEST_CONF_FOLDER
+    mkdir -p $SANITYTEST_CONF_FOLDER
+    tar zxvf $ZSTACK_ARCHIVE/latest -C $SANITYTEST_CONF_FOLDER
 }
 
 test_zstack_unit_test(){
@@ -199,8 +193,11 @@ test_zstack_integration_test(){
     fi
 
     # check test result.
-    cp config_xml/test-result/latest/summary config_xml/test-result/latest/summary-commit
-    sed -i ':q;N;s/\n/\\n/g;t q' config_xml/test-result/latest/summary-commit
+    echo "\nTest Summary:\n\n" > config_xml/test-result/latest/summary-commit
+    echo "TestSuite|TestCase | Pass | Fail | TIMEOUT | Skip\n" >> config_xml/test-result/latest/summary-commit
+    echo "---------|---------| ---- | ---- | ------- | ----\n" >> config_xml/test-result/latest/summary-commit
+    cat config_xml/test-result/latest/summary | sed -n '/--*$/{:1;N;/--*$/{p;b};N;b1}' | grep -v '\-\-' | awk '{if ($1~/:/) {suite=$1;gsub(":","", suite)} else {if ($2!=1) {printf("%s|__%s__|%s|%s|%s|%s\\n", suite, $1, $2, $3, $4, $5)} else {printf("%s|%s|%s|%s|%s|%s\\n", suite, $1, $2, $3, $4, $5)}}}' >> config_xml/test-result/latest/summary-commit
+    cat config_xml/test-result/latest/summary | grep "Total:" | awk '{printf("Total|%s|%s|%s|%s|%s\n",$2,$3,$4,$5,$6)}' >> config_xml/test-result/latest/summary-commit
     commit_report 'Pass' "Integration Test Result: `cat config_xml/test-result/latest/summary-commit`"
 
     Exit 0
@@ -215,7 +212,7 @@ commit_report(){
     else
         comment_body="#[zstack Test Bot Report]        Comments \n $2"
     fi
-    curl_command="curl -d '{\"body\": \" $comment_body \"}' -i -u zstack:zstack123 -X POST https://api.github.com/repos/zstackorg/zstack/commits/$new_commit/comments"
+    curl_command="curl -d '{\"body\": \" $comment_body \"}' -i -u zstacktest:zstack@test1 -X POST https://api.github.com/repos/zstacktest/zstack/commits/$new_commit/comments"
     echo $curl_command > $GITHUB_COMMENTS_POST
     [ -f ~/.zstackwoodpecker/.proxyrc ] && source ~/.zstackwoodpecker/.proxyrc
     sh $GITHUB_COMMENTS_POST
