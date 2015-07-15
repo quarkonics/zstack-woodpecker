@@ -76,6 +76,15 @@ def copy_id_dsa(vm_inv, ssh_cmd, tmp_file):
     cmd = '%s "chmod 600 /root/.ssh/id_dsa"' % ssh_cmd
     process_result = execute_shell_in_process(cmd, tmp_file)
 
+def copy_id_rsa(vm_inv, ssh_cmd, tmp_file):
+    src_file = '/root/.ssh/id_rsa'
+    target_file = '/root/.ssh/id_rsa'
+    if not os.path.exists(src_file):
+        os.system("ssh-keygen -t rsa -N '' -f %s" % src_file)
+    test_lib.lib_scp_file_to_vm(vm_inv, src_file, target_file)
+    cmd = '%s "chmod 600 /root/.ssh/id_rsa"' % ssh_cmd
+    process_result = execute_shell_in_process(cmd, tmp_file)
+
 def copy_id_dsa_pub(vm_inv):
     src_file = '/root/.ssh/id_dsa.pub'
     target_file = '/root/.ssh/authorized_keys'

@@ -39,6 +39,7 @@ def test():
     test_stub.only_install_zstack(ssh_cmd1, target_file, tmp_file)
 
     test_stub.copy_id_dsa(vm1_inv, ssh_cmd1, tmp_file)
+    test_stub.copy_id_rsa(vm1_inv, ssh_cmd1, tmp_file)
     test_stub.copy_id_dsa_pub(vm2_inv)
 
     cmd = '%s "zstack-ctl install_db --host=%s"' % (ssh_cmd1, vm2_ip)
